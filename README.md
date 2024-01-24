@@ -1,8 +1,6 @@
 <br />
 <p align="center">
-  <h1 align="center">🔭 Polygonisation de batiments </h1>
-  #<h3 align="center">A probing benchmark for spatial undersranding of vision-language models.</h3>
-  
+  <h1 align="center">🔭 Polygonisation de batiments </h1>  
   </p>
 </p>
 
@@ -51,7 +49,9 @@ La définition de ces deux métriques permet de répondre aux limites que soulè
 
 #### a) méthode  de polygonisation directe:
 
+
 <img width="788" alt="Capture d’écran 2024-01-24 à 20 37 21" src="https://github.com/hajarVMI/Projet-Vision/assets/157238036/87e679b8-ecd0-47d5-b3e4-a3e3c798600d">
+
 
 La méthode de polygonisation directe proposée par  de Xu et.al a été choisi en raison de la simplicité du modèle et de son efficacité ( elle permet l’analyse d’une scène entière en 1 fois).  Les auteurs traitent le problème  comme un problème de régression  via un double-branched network pour contrer le déséquilibre de classes rencontré lors de l’apprentissage de la segmentation et de la matrice binaire des vertex ou des contours. Le modèle développé par les auteurs prédit la segmentation et la carte de densité des vertex à partir de la carte de distance TSD.
 Dans un premier temps les auteurs utilisent un modèle composé de 3 régresseurs, le premier permettant de prédire la carte des TSD à partir des caractéristiques extraites ( via un backebones).  A partir de cela,  deux régresseurs sont utilisés pour extraire les informations relatives aux vertex (carte de densité, branche 1  ) et à la segmentation (branche 2). La carte de segmentation prédite constitue le polygone initial.
@@ -59,21 +59,23 @@ Dans un premier temps les auteurs utilisent un modèle composé de 3 régresseur
 La deuxième phase consiste à affiner le polygone initial en utilisant la carte de densité prédite et le polygone initial définit par la carte de segmentation. Chaque vertex du polygone initial est remplacé par le vertex voisin qui possède la réponse la plus  élevée dans la carte de densité. Pour cela, un voisinage autour du vertex est défini. Puis les vertex sont filtrés permettant de garder uniquement les vertex qui ont une réponse supérieure au seuil. 
 Ainsi, la construction des polygones repose à la fois sur la segmentation prédite, qui permet de définir le polygone initial et sur la capacité du modèle à prédire la carte de densité, puisqu’un seuil trop stringent et un voisinage faible applique un filtre trop strict sur les vertex.  Dans le cadre de cette étude, nous avons choisi d’utiliser un seuil de binarisation du masque de segmentation à 0.7. Les différents paramètres tels que le nombre de voisins et les différents seuils de réponse seront présentés lors de l’analyse des résultats.
 
-#### b) Concernant la structure du modèle:
+#### b) Structure du modèle:
+
 
 <img width="788" alt="Capture d’écran 2024-01-24 à 20 36 30" src="https://github.com/hajarVMI/Projet-Vision/assets/157238036/081c2f17-aa3d-4ef1-ad2d-9fd0752fab6a">
+
 
 - L’extracteur des caractéristiques est un backbone avec une architecture  U-net et encodeur de type ResNet-101 pré-entraîné sur ImageNet et renvoie une carte des caractéristiques de profondeur 128.
 
 - Le  régresseur  de la carte de TSD utilise un réseau de régression séquentiel qui commence par une couche de convolution suivie d'une normalisation par lot et d'une activation ReLU. Il intègre ensuite un bloc résiduel pour approfondir le réseau sans augmenter la complexité, suivi par une autre couche de convolution avec normalisation, activation ReLU, et un dropout élevé ( 0.4) pour la régularisation. Finalement, le réseau se termine par une couche de convolution qui réduit les canaux à une seule sortie avec une activation Tanh pour prédire une carte de distance normalisée entre -1 et 1.
   
--La branche 1 du modèle utilisée pour prédire la carte de densité, débute avec une couche de convolution réduisant les canaux d'entrée de 129 à 64, suivie d'une normalisation par lots et d'une activation ReLU. Après un bloc résiduel et une couche de dropout (0.4) pour la régularisation, une autre couche de convolution réduit encore les canaux de 64 à 1, et la fonction d'activation Sigmoid est appliquée à la sortie pour produire une probabilité entre 0 et 1 pour chaque pixel.
+- La branche 1 du modèle utilisée pour prédire la carte de densité, débute avec une couche de convolution réduisant les canaux d'entrée de 129 à 64, suivie d'une normalisation par lots et d'une activation ReLU. Après un bloc résiduel et une couche de dropout (0.4) pour la régularisation, une autre couche de convolution réduit encore les canaux de 64 à 1, et la fonction d'activation Sigmoid est appliquée à la sortie pour produire une probabilité entre 0 et 1 pour chaque pixel.
 
 - La branche 2 utilise une architecture  similaire à la branche 1.
 
-  #### c)L’apprentissage du modèle :
+#### c)L’apprentissage du modèle :
 
-  Pour l’apprentissage du modèle, l’erreur quadratique moyenne (MSE) est utilisée pour l‘apprentissage et de la TSD et la carte de densité.  Pour l’apprentissage de la carte de densité, des facteurs de normalisations ont été introduits pour réduire le problème lié au déséquilibre de classes. Dans le cas de la fonction loss associé à la densité, le premier terme représente l’erreur quadratique moyenne pour les pixels présentant un signal positive et le dixième terme correspond à l’erreurs quadratique moyenne pour les pixels présentant un signal nul.
+Pour l’apprentissage du modèle, l’erreur quadratique moyenne (MSE) est utilisée pour l‘apprentissage et de la TSD et la carte de densité.  Pour l’apprentissage de la carte de densité, des facteurs de normalisations ont été introduits pour réduire le problème lié au déséquilibre de classes. Dans le cas de la fonction loss associé à la densité, le premier terme représente l’erreur quadratique moyenne pour les pixels présentant un signal positive et le dixième terme correspond à l’erreurs quadratique moyenne pour les pixels présentant un signal nul.
 L’entropie  croisée binaire a  est utilisé pour l’apprentissage de la segmentation.
 Des facteur alpha , beta et gamma sont respectivement associés aux fonctions pertes de la carte de la TSD , de la carte de densité des vertex et de segmentation.
 
@@ -84,4 +86,59 @@ Alph = 0.6 , beta = 1 et gamma = 0.4 : ici le poids maximum est associé à la f
 Dans ce qui suit, l’apprentissage du modèle s’est fait sur 30 époques et en définissant un Batch size de 3.
 
 #### 3.Résultats:
+
+Pour évaluer la capacité du modèle à construire les polygones , nous avons utilisé le score IoU qui représente le rapport entre l'intersection et l'union des polygones prédits par le modèle et les polygones annotés dans la base de données (vérité terrain) par image analysé . Puis une moyenne de ses scores a été faite pour obtenir le score IoU moyen par image analysé .
+Les scores IoU sont calculés pour des voisinages différents  ( 5,10,15 voisins ) et des seuils de réponses différents ( 0.5,0.7).
+La qualité de l’apprentissage du modèle  et la généralisation  est discutée  respectivement par l’étude des courbes de fonctions pertes sur les données d’apprentissages et de validations au cours des époques. 
+
+
+
+<img align="right" width="300" alt="Capture d’écran 2024-01-24 à 20 44 40" src="https://github.com/hajarVMI/Projet-Vision/assets/157238036/35b2ef64-4c62-4d4d-aceb-e36950bfe5a0">
+
+L’analyse des courbes loss pour un poids de 1 associé aux fonctions pertes de la carte de TSD, la densité et à la     segmentation, montre une décroissance de la fonction perte sur les données train, synonyme de l’apprentissage du modèle (figure 5). Cependant on voit que notre modèle est sujet au sur-apprentissage (figure 5), puisque la fonction perte obtenu sur les données validations présente un écart avec celle obtenue sur les données d’apprentissages.
+
+
+
+
+ F1 (segmentation) |   IoU  (seuil: 0.7, voisinage: 5) |  IoU (seuil: 0.7, voisinage: 10)  | IoU (seuil: 0.5, voisinage: 10)
+:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:
+0.75|0.0031|0.0113|0.48|
+
+
+L’analyse de la capacité du modèle à prédire les polygones montre que le modèle est incapable de prédire les polygones  en cas de stringence à la fois sur le  voisinage et la valeur de la densité associée aux vertex du polygone initial ( défini à partir de la segmentation prédite). Cependant , même si une augmentation du voisinage et une diminution du seuil de réponse permettent une meilleure prédiction des polygones, ses résultats restent insuffisant.
+
+L’étude de la qualité de la segmentation via le f1 score ( qui est une moyenne harmonique de la précision et du rappel ) montre un score élevé de 0.75, témoignant ainsi de la capacité du modèle à prédire correctement le masque de segmentation à partir de la carte des distances TSD prédites. Donc  les capacités limités du modèle à prédire les polygones résident dans le défaut de prédiction de la carte de densité des vertex.
+
+<img align="right" width="300" alt="Capture d’écran 2024-01-24 à 20 50 08" src="https://github.com/hajarVMI/Projet-Vision/assets/157238036/54875262-29e7-48cb-94c7-b1866c3f28ff">
+Pour forcer le modèle à apprendre la carte de densité des vertex, nous allons diminuer les poids associés à la fonction perte de la carte des TSD  (alpha) et du masque de segmentation (gamma). 
+
+Hyperparamètres  | F1 (segmentation) |   IoU  (seuil: 0.7, voisinage: 5) |  IoU (seuil: 0.7, voisinage: 10)  | IoU (seuil: 0.5, voisinage: 10)
+:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:
+Alpha =  1, beta = 1, gamma = 1|0.74|0.0031|0.0113|0.48|
+Alpha =  0.6, beta = 1, gamma = 0.4|0.70|0.01|0.06|0.57|
+
+Le modèle prédit correctement les masques de segmentations ( f1 score de 0.70) et l’analyse des scores IoU montre une augmentation de la qualité des polygones prédits ( 0.003 contre 0.0129 pour un voisinage de 5 pixels et un seuil de réponse de 0.7). Cependant, ses résultats ne sont pas suffisamment élevés pour conclure quant à la capacité du modèle à prédire la carte de densité.
+L’analyse de la courbe de perte montre que le modèle fait du sur-apprentissage, pour limiter ce phénomène, nous avons ajouté une couche de droupout. 
+
+
+ Without    Dropout|  Dropout sur le régresseur de la densité (p =  0.05) | Dropout sur le régresseur de la TSD et de la  densité (p =  0.4) | Dropout sur le régresseur de la TSD (p = 0.6) et de la  densité (p =  0.4)
+:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:
+<img width="199" alt="Capture d’écran 2024-01-24 à 21 23 40" src="https://github.com/hajarVMI/Projet-Vision/assets/157238036/4d786eb6-61e9-42ca-810f-5b0c34757be2">|<img width="194" alt="Capture d’écran 2024-01-24 à 21 23 55" src="https://github.com/hajarVMI/Projet-Vision/assets/157238036/f7ff42c7-2813-41a6-9ee7-89e9ccd17f71">|<img width="199" alt="Capture d’écran 2024-01-24 à 21 24 12" src="https://github.com/hajarVMI/Projet-Vision/assets/157238036/982add9b-1107-4af0-91d8-6954e4c2babc">|<img width="199" alt="Capture d’écran 2024-01-24 à 21 24 20" src="https://github.com/hajarVMI/Projet-Vision/assets/157238036/b6f41013-f468-4cf7-8495-3ea561985d99">|
+
+
+
+Nous avons effectué les tests suivants: 
+- L’ajout d’une couche de droupout avec une probabilité de 0.05 à la branche du modèle qui prédit la carte des densités: on a une légère diminution du sur-apprentissage visible.
+- L’ajout d’une couche de droupout avec une probabilité de 0.4 à la branche du modèle qui prédit la carte des densités et à la branche qui prédit la TSD : on remarque cette fois-ci une diminution globale du sur-apprentissage.
+- L’ajout d’une couche de droupout avec une probabilité de 0.6 et 0.4 respectivement aux  branches du régresseur de la carte des densités et de la TSD : les capacités d’apprentissages du modèle sont légèrement détériorées ( augmentation de la loss sur les données d’apprentissages  à partir de la 10 ème époque ).
+
+Hyperparamètres  | F1 (segmentation) |   IoU  (seuil: 0.7, voisinage: 5) |  IoU (seuil: 0.7, voisinage: 10)  | IoU (seuil: 0.5, voisinage: 10)
+:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:
+Alpha =  0.6, beta = 1, gamma = 0.4|0.70|0.01|0.06|0.57|
+Alpha =  0.6, beta = 1, gamma = 0.4|0.72|0,001|0.01|0.47|
+
+
+L’ajout d’une couche de droupout avec une probabilité de 0.4 à la branche du modèle qui prédit la carte des densité et à la branche qui prédit la TSD permet donc une diminution du sur-apprentissage sans altérer l’apprentissage du modèle. L’analyse du f1 score montre une bonne capacité du modèle à prédire les masques de segmentation ( 0.721) cependant, les scores IoU des polygones prédits ne suggèrent pas une amélioration de la capacité du modèle à prédire les polygones.
+
+
 
