@@ -1,6 +1,6 @@
 <br />
 <p align="center">
-  <h1 align="center">🔭 Polygonisation de batiments </h1>  
+  <h1 align="center"> Polygonisation de batiments </h1>  
   </p>
 </p>
 
@@ -8,9 +8,11 @@
 
 ### 1. Les données: 
 #### a) Les données crowdAI Mapping Challenge:
+<p align="justify">
+
 
 Les données utilisées sont  issues du crowdAI Mapping Challenge, il s’agit d’images satellitaires de dimension 300*300 pixels et  annotées au format MS-COCO . Toute l’étude a été conduite en sélectionnant 1000 images  du jeux de données mise à disposition. Les images  utilisées  ont été découpées comme suit: 70 % pour l’entrainement du modèle et 15 % pour la validation et le test. Les images utilisées ainsi que les masques de segmentation et les masques des polygones ont été redimensionnés à 224*224 en utilisant la transformation linéaire.
-
+</p>
 
 #### b) La carte des distances TSD et la carte de densité:
 
