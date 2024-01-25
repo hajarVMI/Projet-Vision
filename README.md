@@ -4,7 +4,11 @@
   </p>
 </p>
 
+<p align="justify">
+plusieurs méthodes utilisent le post-processing sur le masque de segmentation pour prédire les polygones qui délimitent les objets. Cependant, du fait du déséquilibre des classes, la segmentation sémantique présente souvent des défauts au niveau de la  prédiction des contours des objets (imprécisions ...). Ainsi, des méthodes qui se basent sur la segmentation sémantique pour extraire les noeuds ou les contours des objets souffrent d'imprécisions. Pour contrer les problèmes dus aux déséquilibres des classes, l'apprentissage d'une fonction distance TSD , permettant une meilleur  modélisation des contours des objets  est utilisée pour extraire d'une part le masque de segmentation et d'autre part la carte des vertex. Ceci permet à la fois une meilleur prédiction du masque de segmentation et des noeuds.
+l'approche implémenté permet une  construction directe des  polygones.  
 
+</p>
 
 ### 1. Les données: 
 #### a) Les données crowdAI Mapping Challenge:
@@ -192,3 +196,18 @@ L’ajout d’une couche de droupout avec une probabilité de 0.4 à la branche 
 
 <p>
 
+
+### Citation
+La méthode  implementé se base sur l’article suivant:
+```bibtex
+@INPROCEEDINGS{10144146,
+  author={Xu, Yajin and Schuegraf, Philipp and Bittner, Ksenia},
+  booktitle={2023 Joint Urban Remote Sensing Event (JURSE)}, 
+  title={Vertex Aided Building Polygonization from Satellite Imagery Applying Deep Learning}, 
+  year={2023},
+  volume={},
+  number={},
+  pages={1-4},
+  keywords={Deep learning;Satellites;Image recognition;Buildings;Complexity theory;Convolutional neural networks;Task analysis;building vectorization;building extraction;pattern recognition;deep learning},
+  doi={10.1109/JURSE57346.2023.10144146}}
+```
